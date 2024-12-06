@@ -150,7 +150,7 @@ class Mail():
 
         """
         message = MIMEMultipart()
-        message['to_mail'] = to
+        message['to'] = to
         message['from'] = sender
         message['subject'] = subject
 
