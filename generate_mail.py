@@ -23,20 +23,52 @@ load_dotenv()
 # The Gmail API scope needed for sending emails
 SCOPES = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly"]
 
-class HetCAKEmail():
-    def __init__(self, sender: str, to: str):
+class Mail():
+    def __init__(self, sender_mail: str, to_mail: str):
         """
+        Create and send an e-mail with an overview of the emails that were found in a given folder of the user's e-mail.
 
-        :param sender:
-        :param to:
+        The script looks at the contents of the e-mail from the authenticated user. This user's email must be the same
+        as the sender_mail. Default the script looks at the content of the "INBOX" folder.
+
+        Given an example sender_mail and a to_mail, and a subject, the following mail could be sent:
+        E.g.:
+        ```
+        Beste,
+
+        Over de afgelopen periode (Tue, 01 Oct 2024 t/m Thu, 31 Oct 2024) zijn de volgende 2 mails verzonden.
+
+        Datum	                        Onderwerp
+        Mon, 28 Oct 2024 14:13:56 +0100	Formulier ingevuld
+        Mon, 14 Oct 2024 13:04:14 +0200	Re: Welkomstmail
+
+        Met vriendelijke groet,
+        CINQ ICT
+        ```
+
+        It is possible to override the default content of the e-mail that is sent with a custom text. However, you must
+        then also construct your own table of information on the contents of the selected e-mail folder(s).
+
+        Parameters
+        ----------
+        sender_mail :    str
+                    E-mail address from which the folders will be inspected, and from which the mail will be sent from.
+        to_mail :        str
+                    E-mail address to send the constructed email to.
         """
         self.service = self.authenticate_gmail()
-        self.sender = sender
-        self.to = to
+        self.sender = sender_mail
+        self.to = to_mail
 
     @staticmethod
     def authenticate_gmail():
-        """Authenticate and create a service object for sending emails."""
+        """
+        Authenticate and create a Gmail object for sending emails.
+
+        Returns
+        -------
+        service : object through which can be interacted with the Gmail API.
+        """
         creds = None
         # The file token.pickle stores the user's access and refresh tokens.
         # It is created automatically when the authorization flow completes for the first time.
@@ -63,11 +95,21 @@ class HetCAKEmail():
 
     @staticmethod
     def get_previous_month_start_end():
+        """
+        Get the start and end dates from the previous month, based on the current month.
+
+        Returns
+        -------
+        start_date :   datetime.datetime
+                            The end date of the previous month, of the format e.g. "Mon, 01 Jan 2024"
+        end_date :     datetime.datetime
+                            The end date of the previous month, of the format e.g. "Mon, 01 Jan 2024"
+        """
         today = dt.datetime.today()
         current_year = today.year
         current_month = today.month
 
-        # If we're in January, go back to December of the previous year
+        # If we're in January, go back to_mail December of the previous year
         if current_month == 1:
             current_month = 12
             current_year -= 1
@@ -81,22 +123,42 @@ class HetCAKEmail():
         _, last_day_of_previous_month = calendar.monthrange(current_year, current_month)
         last_day_of_previous_month = dt.datetime(current_year, current_month, last_day_of_previous_month, 23, 59, 59)
 
-        # Convert to timestamps
-        start_timestamp = first_day_of_previous_month.date().strftime("%a, %d %b %Y")
-        end_timestamp = last_day_of_previous_month.date().strftime("%a, %d %b %Y")
+        # Convert to_mail timestamps of the format e.g. "Mon, 01 Jan 2024"
+        start_date = first_day_of_previous_month.date().strftime("%a, %d %b %Y")
+        end_date = last_day_of_previous_month.date().strftime("%a, %d %b %Y")
 
-        return start_timestamp, end_timestamp
+        return start_date, end_date
 
-    def create_message(self, sender, to, subject, body = None):
-        """Create an email message."""
+    def create_message(self, sender: str, to: str, subject: str, body: str = None):
+        """
+        Create an email message.
+
+        Parameters
+        ----------
+        sender :    str
+                    The email address to_mail send the mail from.
+        to :        str
+                    The email address to_mail send the mail to_mail.
+        subject :
+                    The email address to_mail send the mail to_mail.
+        body :      str, optional
+                    The text to_mail use as the body of the e-mail. See the contents of the function for the default body.
+
+        Returns
+        -------
+        dict :  dictionary of a single base64 encoded string holding the message
+
+        """
         message = MIMEMultipart()
-        message['to'] = to
+        message['to_mail'] = to
         message['from'] = sender
         message['subject'] = subject
 
         date_start, date_end = self.get_previous_month_start_end()
         sent_emails = self.get_emails(date_start, date_end)
-        sent_emails_df = pd.DataFrame(sent_emails, columns=["Date", "Event"])
+        sent_emails_df = pd.DataFrame(sent_emails, columns=["Datum", "Onderwerp"])
+        sent_emails_df = sent_emails_df.set_index("Datum")
+        sent_emails_df.sort_index(inplace=True)
 
         body = body or f"""
         <body>
@@ -122,7 +184,23 @@ class HetCAKEmail():
         return {'raw': raw_message}
 
     @staticmethod
-    def date_is_within_range(date_start, date_end, date_to_check) -> bool:
+    def date_is_within_range(date_start: dt.datetime.date, date_end: dt.datetime.date, date_to_check:  dt.datetime.date) -> bool:
+        """
+        Check if a given date is within the passed daterange.
+
+        Parameters
+        ----------
+        date_start :    dt.datetime.date
+                        The start of the daterange.
+        date_end :      dt.datetime.date
+                        The end of the daterange.
+        date_to_check : dt.datetime.date
+                        The date to_mail be checked.
+
+        Returns
+        -------
+        bool : True if the date_to_check falls in the given daterange. Otherwise False.
+        """
         date_format = "%a, %d %b %Y"  # Format: Weekday, Day Month Year
         date_to_check_tz = dt.datetime.fromtimestamp(mktime_tz(parsedate_tz(date_to_check)))
         date_to_check = date_to_check_tz.date()
@@ -140,9 +218,24 @@ class HetCAKEmail():
             return False
 
     def get_emails(self, date_start: dt.datetime.date = None, date_end: dt.datetime.date = None, folders: list = ["INBOX"]) -> list[tuple]:
-        try:
-            excluded_subject = "Mailrapportage"
+        """
+        Retrieve all emails from the given daterange that are present in the requested folder(s).
 
+        Parameters
+        ----------
+        date_start :    datetime.datetime.date, optional
+                        The start of the date-range within the e-mail's timestamp must fall in.
+        date_end :      datetime.datetime.date, optional
+                        The end of the date-range within the e-mail's timestamp must fall in.
+        folders :       list of str, default=["INBOX"]
+                        The folders to_mail scan to_mail retrieve the mails.
+
+        Returns
+        -------
+        sent_emails :   list of tuples
+                        A list of tuples, where each tuple contains the e-mail's timestamp and the subject.
+        """
+        try:
             results = self.service.users().messages().list(userId="me", labelIds=folders).execute()
             ids = [ids["id"] for ids in results.get("messages", [])]
 
@@ -168,8 +261,17 @@ class HetCAKEmail():
             print(f"An error occurred: {error}")
 
 
-    def send_message(self, subject, body = None):
-        """Send an email message."""
+    def send_message(self, subject: str, body: str = None) -> None:
+        """
+        Send an e-mail message.
+
+        Parameters
+        ----------
+        subject :   str
+                    The text to_mail use as the subject of the e-mail.
+        body :  str
+                The text to_mail use as the body of the e-mail.
+        """
         try:
             message = self.create_message(self.sender, self.to, subject, body)
             send_message = self.service.users().messages().send(userId="me", body=message).execute()
@@ -178,5 +280,5 @@ class HetCAKEmail():
             print(f'An error occurred: {error}')
 
 
-mail = HetCAKEmail(sender=os.getenv('SENDER_MAIL'), to=os.getenv('TO_MAIL'))
+mail = Mail(sender_mail=os.getenv('SENDER_MAIL'), to_mail=os.getenv('TO_MAIL'))
 mail.send_message(subject="Mailonderwerpen afgelopen maand")
