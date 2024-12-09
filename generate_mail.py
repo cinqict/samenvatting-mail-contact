@@ -23,7 +23,7 @@ load_dotenv()
 # The Gmail API scope needed for sending emails
 SCOPES = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly"]
 
-class Mail():
+class Mail:
     def __init__(self, sender_mail: str, to_mail: str):
         """
         Create and send an e-mail with an overview of the emails that were found in a given folder of the user's e-mail.
