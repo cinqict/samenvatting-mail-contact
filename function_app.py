@@ -306,8 +306,3 @@ class Mail:
             print(f'Message Id: {send_message["id"]}')
         except Exception as error:
             print(f'An error occurred: {error}')
-
-mail = Mail(os.environ["SENDER_MAIL"], os.environ["TO_MAIL"]) # TODO rename env vars to MAIL_TO and MAIL_SENDER for ease of search
-logging.info('DINGGG!!!!!!!')
-logging.info(str(mail.sender))
-mail.send_message(subject="Summary mailbox last month.")
