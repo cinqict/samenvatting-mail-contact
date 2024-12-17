@@ -1,12 +1,3 @@
 {
-    "scriptFile": "function_app.py",
-    "bindings": [
-    {
-      "name": "myTimer",
-      "type": "timerTrigger",
-      "direction": "in",
-      "schedule": "* * * * * *",
-      "runOnStartup": true
-    }
-  ]
+    "scriptFile": "function_app.py"
 }
