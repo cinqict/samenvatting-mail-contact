@@ -1,3 +1,10 @@
 {
-    "scriptFile": "function_app.py"
+    "scriptFile": "function_app.py",
+    "bindings": [
+      {
+        "name": "mailTimer",
+        "type": "timerTrigger",
+        "direction": "in"
+      }
+    ]
 }
