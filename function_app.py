@@ -6,6 +6,7 @@ import base64
 import calendar
 import datetime as dt
 import pickle
+import json
 
 from dotenv import load_dotenv
 
@@ -17,6 +18,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.credentials import Credentials
 
 import pandas as pd
 
@@ -24,14 +26,15 @@ load_dotenv()
 
 app = func.FunctionApp()
 
-@app.timer_trigger(schedule="* * * * * *", arg_name="myTimer", run_on_startup=False,
+# TODO set run_on_startup to false when going to production/using cak mails
+@app.timer_trigger(schedule="0 0 8 1 * *", arg_name="mailTimer", run_on_startup=True,
               use_monitor=False) 
-def cak_communicatie_mail(myTimer: func.TimerRequest) -> None:
-    if myTimer.past_due:
-        logging.info('The timer is past due!')
-
-    logging.info('Python timer trigger function executed.')
-
+def cak_communicatie_mail(mailTimer: func.TimerRequest) -> None:
+    mail = Mail(os.environ["MAIL_SENDER"], os.environ["MAIL_TO"]) # TODO rename env vars to MAIL_TO and MAIL_SENDER for ease of search
+    subject = "Summary mailbox last month."
+    logging.info(f"Sending mail from {str(mail.sender)} to {str(mail.to)} with subject {subject}")
+    mail.send_message(subject=subject)
+    logging.info("Message sent!")
 
 
 
@@ -87,17 +90,27 @@ class Mail:
         creds = None
         # The file token.pickle stores the user's access and refresh tokens.
         # It is created automatically when the authorization flow completes for the first time.
-        if os.path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
-                creds = pickle.load(token)
+        if os.environ['GMAIL_ACCESS_TOKEN'] and os.environ['GMAIL_REFRESH_TOKEN']:
+            access_token = os.environ['GMAIL_ACCESS_TOKEN']
+            refresh_token= os.environ['GMAIL_REFRESH_TOKEN']
+            token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
+
+            # Create a Credentials object manually using the stored access_token and refresh_token
+            creds = Credentials(
+                token=access_token,
+                refresh_token=refresh_token,
+                token_uri=token_uri
+            )
 
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES)
+                credentials_json = os.environ['GMAIL_API_CREDENTIALS']
+                # Parse the credentials JSON string
+                credentials_dict = json.loads(credentials_json)
+                flow = InstalledAppFlow.from_client_config(credentials_dict, SCOPES)
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
@@ -294,3 +307,7 @@ class Mail:
         except Exception as error:
             print(f'An error occurred: {error}')
 
+mail = Mail(os.environ["SENDER_MAIL"], os.environ["TO_MAIL"]) # TODO rename env vars to MAIL_TO and MAIL_SENDER for ease of search
+logging.info('DINGGG!!!!!!!')
+logging.info(str(mail.sender))
+mail.send_message(subject="Summary mailbox last month.")
