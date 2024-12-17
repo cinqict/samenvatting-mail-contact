@@ -90,15 +90,19 @@ class Mail:
         creds = None
         # The file token.pickle stores the user's access and refresh tokens.
         # It is created automatically when the authorization flow completes for the first time.
-        if os.environ['GMAIL_ACCESS_TOKEN'] and os.environ['GMAIL_REFRESH_TOKEN']:
-            access_token = os.environ['GMAIL_ACCESS_TOKEN']
-            refresh_token= os.environ['GMAIL_REFRESH_TOKEN']
+        access_token = os.environ['GMAIL_ACCESS_TOKEN']
+        refresh_token= os.environ['GMAIL_REFRESH_TOKEN']
+        client_id = os.environ['GMAIL_CLIENT_ID']
+        client_secret= os.environ['GMAIL_CLIENT_SECRET']
+        if access_token and refresh_token and client_id and client_secret:
             token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
 
             # Create a Credentials object manually using the stored access_token and refresh_token
             creds = Credentials(
                 token=access_token,
                 refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret,
                 token_uri=token_uri
             )
 
