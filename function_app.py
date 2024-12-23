@@ -26,7 +26,7 @@ load_dotenv()
 
 app = func.FunctionApp()
 
-# TODO set run_on_startup to false when going to production/using cak mails
+
 @app.timer_trigger(schedule="0 0 8 1 * *", arg_name="mailTimer", run_on_startup=False,
               use_monitor=False) 
 def cak_communicatie_mail(mailTimer: func.TimerRequest) -> None:
@@ -94,7 +94,8 @@ class Mail:
         client_secret= os.getenv('GMAIL_CLIENT_SECRET')
         if access_token and refresh_token and client_id and client_secret:
             token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
- 
+            logging.info("Found acces token, refresh token, client id and client secret.")
+            logging.debug("Creating credentials object.")
             # Create a Credentials object manually using the stored access_token and refresh_token
             creds = Credentials(
                 token=access_token,
@@ -103,11 +104,15 @@ class Mail:
                 client_secret=client_secret,
                 token_uri=token_uri
             )
+            logging.debug("Credentials object created.")
 
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
+            logging.debug("Did not find creds or creds were not valid.")
             if creds and creds.expired and creds.refresh_token:
+                logging.debug("Attempting to refresh token.")
                 creds.refresh(Request())
+                logging.debug("Token refreshed!")
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES)
@@ -117,7 +122,7 @@ class Mail:
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)
 
-        # Build the Gmail API service
+        logging.debug("Building the GMAIL API service.")
         service = build('gmail', 'v1', credentials=creds)
         return service
 
@@ -240,10 +245,10 @@ class Mail:
 
         # Check if the date falls within the range
         if start_date <= date_to_check <= end_date:
-            print(f"{date_to_check} is within the range.")
+            logging.info(f"{date_to_check} is within the range.")
             return True
         else:
-            print(f"{date_to_check} is outside the range.")
+            logging.info(f"{date_to_check} is outside the range.")
             return False
 
     def get_emails(self, date_start: dt.datetime.date = None, date_end: dt.datetime.date = None, folders: list = ["INBOX"]) -> list[tuple]:
@@ -287,7 +292,7 @@ class Mail:
 
         except HttpError as error:
             # TODO(developer) - Handle errors from gmail API.
-            print(f"An error occurred: {error}")
+            logging.error(f"An error occurred: {error}")
 
 
     def send_message(self, subject: str, body: str = None) -> None:
@@ -304,7 +309,7 @@ class Mail:
         try:
             message = self.create_message(self.sender, self.to, subject, body)
             send_message = self.service.users().messages().send(userId="me", body=message).execute()
-            print(f'Message Id: {send_message["id"]}')
+            logging.info(f'Message Id: {send_message["id"]}')
             logging.info("Message sent!")
         except Exception as error:
-            print(f'An error occurred: {error}')
+            logging.error(f'An error occurred: {error}')
