@@ -27,7 +27,7 @@ load_dotenv()
 app = func.FunctionApp()
 
 # TODO set run_on_startup to false when going to production/using cak mails
-@app.timer_trigger(schedule="0 0 8 1 * *", arg_name="mailTimer", run_on_startup=True,
+@app.timer_trigger(schedule="0 0 8 1 * *", arg_name="mailTimer", run_on_startup=False,
               use_monitor=False) 
 def cak_communicatie_mail(mailTimer: func.TimerRequest) -> None:
     mail = Mail(os.environ["MAIL_SENDER"], os.environ["MAIL_TO"])
