@@ -34,8 +34,6 @@ def cak_communicatie_mail(mailTimer: func.TimerRequest) -> None:
     subject = "Overzicht mailuitwisseling afgelopen maand"
     logging.info(f"Sending mail from {str(mail.sender)} to {str(mail.to)} with subject {subject}")
     mail.send_message(subject=subject)
-    logging.info("Message sent!")
-
 
 
 # The Gmail API scope needed for sending emails
@@ -96,7 +94,7 @@ class Mail:
         client_secret= os.getenv('GMAIL_CLIENT_SECRET')
         if access_token and refresh_token and client_id and client_secret:
             token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
-
+ 
             # Create a Credentials object manually using the stored access_token and refresh_token
             creds = Credentials(
                 token=access_token,
@@ -307,5 +305,6 @@ class Mail:
             message = self.create_message(self.sender, self.to, subject, body)
             send_message = self.service.users().messages().send(userId="me", body=message).execute()
             print(f'Message Id: {send_message["id"]}')
+            logging.info("Message sent!")
         except Exception as error:
             print(f'An error occurred: {error}')
