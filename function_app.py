@@ -30,7 +30,7 @@ app = func.FunctionApp()
 @app.timer_trigger(schedule="0 0 8 1 * *", arg_name="mailTimer", run_on_startup=True,
               use_monitor=False) 
 def cak_communicatie_mail(mailTimer: func.TimerRequest) -> None:
-    mail = Mail(os.environ["MAIL_SENDER"], os.environ["MAIL_TO"]) # TODO rename env vars to MAIL_TO and MAIL_SENDER for ease of search
+    mail = Mail(os.environ["MAIL_SENDER"], os.environ["MAIL_TO"])
     subject = "Overzicht mailuitwisseling afgelopen maand"
     logging.info(f"Sending mail from {str(mail.sender)} to {str(mail.to)} with subject {subject}")
     mail.send_message(subject=subject)
