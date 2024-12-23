@@ -88,33 +88,49 @@ class Mail:
         service : object through which can be interacted with the Gmail API.
         """
         creds = None
-        # The file token.pickle stores the user's access and refresh tokens.
-        # It is created automatically when the authorization flow completes for the first time.
-        access_token = os.environ['GMAIL_ACCESS_TOKEN']
-        refresh_token= os.environ['GMAIL_REFRESH_TOKEN']
-        client_id = os.environ['GMAIL_CLIENT_ID']
-        client_secret= os.environ['GMAIL_CLIENT_SECRET']
-        if access_token and refresh_token and client_id and client_secret:
-            token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
+        # # The file token.pickle stores the user's access and refresh tokens.
+        # # It is created automatically when the authorization flow completes for the first time.
+        # access_token = os.getenv('GMAIL_ACCESS_TOKEN')
+        # refresh_token= os.getenv('GMAIL_REFRESH_TOKEN')
+        # client_id = os.getenv('GMAIL_CLIENT_ID')
+        # client_secret= os.getenv('GMAIL_CLIENT_SECRET')
+        # if access_token and refresh_token and client_id and client_secret:
+        #     token_uri = "https://oauth2.googleapis.com/token"  # Google's token endpoint
 
-            # Create a Credentials object manually using the stored access_token and refresh_token
-            creds = Credentials(
-                token=access_token,
-                refresh_token=refresh_token,
-                client_id=client_id,
-                client_secret=client_secret,
-                token_uri=token_uri
-            )
+        #     # Create a Credentials object manually using the stored access_token and refresh_token
+        #     creds = Credentials(
+        #         token=access_token,
+        #         refresh_token=refresh_token,
+        #         client_id=client_id,
+        #         client_secret=client_secret,
+        #         token_uri=token_uri
+        #     )
 
-        # If there are no (valid) credentials available, let the user log in.
+        # # If there are no (valid) credentials available, let the user log in.
+        # if not creds or not creds.valid:
+        #     if creds and creds.expired and creds.refresh_token:
+        #         creds.refresh(Request())
+        #     else:
+        #         credentials_json = os.getenv('GMAIL_API_CREDENTIALS')
+        #         # Parse the credentials JSON string
+        #         credentials_dict = json.loads(credentials_json)
+        #         flow = InstalledAppFlow.from_client_config(credentials_dict, SCOPES)
+        #         creds = flow.run_local_server(port=0)
+
+        #     # Save the credentials for the next run
+        #     with open('token.pickle', 'wb') as token:
+        #         pickle.dump(creds, token)
+
+        # # Build the Gmail API service
+        # service = build('gmail', 'v1', credentials=creds)
+        # return service
+                # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                credentials_json = os.environ['GMAIL_API_CREDENTIALS']
-                # Parse the credentials JSON string
-                credentials_dict = json.loads(credentials_json)
-                flow = InstalledAppFlow.from_client_config(credentials_dict, SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES)
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
